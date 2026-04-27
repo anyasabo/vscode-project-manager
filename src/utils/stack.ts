@@ -25,7 +25,7 @@ export class Stack {
         this.items.push(item);
     }
 
-    public pop(item?: string): string {
+    public pop(item?: string): string | undefined {
         if (!item) {
             return this.items.pop();
         } else {

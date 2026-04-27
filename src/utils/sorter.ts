@@ -67,7 +67,7 @@ function sortByRecent(items: any[], stack: Stack): any[] {
     return loadedProjects;
 }
 
-export function sortProjects(itemsToShow) {
+export function sortProjects(itemsToShow: any[]) {
     let newItemsSorted = [];
     const criteria = workspace.getConfiguration("projectManager").get<string>("sortList", "Name");
     switch (criteria) {

@@ -121,7 +121,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("_projectManager.deleteProject", (node) => deleteProject(node));
     vscode.commands.registerCommand("_projectManager.renameProject", (node) => renameProject(node));
     vscode.commands.registerCommand("_projectManager.editTags", (node) => editTags(node));
-    vscode.commands.registerCommand("projectManager.addToFavorites", (node) => saveProject(node));
+    vscode.commands.registerCommand("projectManager.addToFavorites", (node: ProjectNode | undefined) => saveProject(node));
     vscode.commands.registerCommand("_projectManager.toggleProjectEnabled", (node) => toggleProjectEnabled(node));
 
     const viewAsList = Container.context.globalState.get<boolean>("viewAsList", true);
@@ -207,6 +207,7 @@ export async function activate(context: vscode.ExtensionContext) {
     }));
 
     function refreshProjects(showMessage?: boolean, forceRefresh?: boolean) {
+        const force = forceRefresh ?? false;
 
         vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
@@ -214,35 +215,35 @@ export async function activate(context: vscode.ExtensionContext) {
             cancellable: false
         }, async (progress) => {
             progress.report({ message: "VSCode" });
-            const rvscode = await locators.vscLocator.refreshProjects(forceRefresh);
+            const rvscode = await locators.vscLocator.refreshProjects(force);
         
             progress.report({ message: "Git" });
-            const rgit = await locators.gitLocator.refreshProjects(forceRefresh);
+            const rgit = await locators.gitLocator.refreshProjects(force);
         
             progress.report({ message: "Mercurial" });
-            const rmercurial = await locators.mercurialLocator.refreshProjects(forceRefresh);
+            const rmercurial = await locators.mercurialLocator.refreshProjects(force);
         
             progress.report({ message: "SVN" });
-            const rsvn = await locators.svnLocator.refreshProjects(forceRefresh);
+            const rsvn = await locators.svnLocator.refreshProjects(force);
 
             progress.report({ message: "Any" });
-            const rany = await locators.anyLocator.refreshProjects(forceRefresh);
+            const rany = await locators.anyLocator.refreshProjects(force);
 
-            if (rvscode || rgit || rmercurial || rsvn || rany || forceRefresh) {
+            if (rvscode || rgit || rmercurial || rsvn || rany || force) {
                 progress.report({ message: "Activity Bar"});
-                if (rvscode || forceRefresh) {
+                if (rvscode || force) {
                     providerManager.vscodeProvider.refresh();
                 }
-                if (rgit || forceRefresh) {
+                if (rgit || force) {
                     providerManager.gitProvider.refresh();
                 }
-                if (rmercurial || forceRefresh) {
+                if (rmercurial || force) {
                     providerManager.mercurialProvider.refresh();
                 }
-                if (rsvn || forceRefresh) {
+                if (rsvn || force) {
                     providerManager.svnProvider.refresh();
                 }
-                if (rany || forceRefresh) {
+                if (rany || force) {
                     providerManager.anyProvider.refresh();
                 }
                 providerManager.showTreeViewFromAllProviders();
@@ -287,7 +288,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
         if (node) {
             wpath = node.label as string; 
-            rootPath = node.command.arguments[0];
+            rootPath = node.command!.arguments![0];
         } else {
             const projectDetails = await getProjectDetails();
             if (!projectDetails) {
@@ -432,7 +433,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 undefined;
         const currentProjectPath = workspace0 ? workspace0.fsPath : undefined;
 
-        let foundProject: Project;
+        let foundProject: Project | undefined;
         if (workspace0 && isRemoteUri(workspace0)) {
             foundProject = projectStorage.existsRemoteWithRootPath(workspace0);
         } else {
@@ -481,7 +482,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     function getProjectFilePath() {
         let projectFile: string;
-        const projectsLocation: string = vscode.workspace.getConfiguration("projectManager").get<string>("projectsLocation");
+        const projectsLocation: string = vscode.workspace.getConfiguration("projectManager").get<string>("projectsLocation") ?? "";
         if (projectsLocation !== "") {
             projectFile = path.join(PathUtils.expandHomePath(projectsLocation), PROJECTS_FILE);
         } else {
@@ -499,9 +500,9 @@ export async function activate(context: vscode.ExtensionContext) {
             vscode.workspace.workspaceFolders.length : 0, null, { uri: vscode.Uri.file(projectPath)});
     }
 
-    async function addProjectToWorkspace(node: ProjectNode) {
+    async function addProjectToWorkspace(node: ProjectNode | undefined) {
         if (node) {
-            addProjectPathToWorkspace(node.command.arguments[0]);
+            addProjectPathToWorkspace(node.command!.arguments![0]);
             return;
         }
 
@@ -512,15 +513,15 @@ export async function activate(context: vscode.ExtensionContext) {
     }
 
     function deleteProject(node: ProjectNode) {
-        Container.stack.pop(node.command.arguments[1]);
-        projectStorage.pop(node.command.arguments[1]);
+        Container.stack.pop(node.command!.arguments![1]);
+        projectStorage.pop(node.command!.arguments![1]);
         projectStorage.save();
         providerManager.updateTreeViewStorage();
         vscode.window.showInformationMessage(l10n.t("Project successfully deleted!"));
     }
 
     function renameProject(node: ProjectNode) {
-        const oldName: string = node.command.arguments[1];
+        const oldName: string = node.command!.arguments![1];
         // Display a message box to the user
         // ask the NEW PROJECT NAME ()
         const ibo = <vscode.InputBoxOptions> {
@@ -545,7 +546,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 projectStorage.rename(oldName, newName);
                 projectStorage.save();
                 vscode.window.showInformationMessage(l10n.t("Project renamed!"));
-                updateStatusBar(oldName, node.command.arguments[0], newName);
+                updateStatusBar(oldName, node.command!.arguments![0], newName);
             } else {
                 vscode.window.showErrorMessage(l10n.t("Project already exists!"));
             }
@@ -554,7 +555,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     async function editTags(node: ProjectNode) {
 
-        const project = projectStorage.existsWithRootPath(node.command.arguments[0]);
+        const project = projectStorage.existsWithRootPath(node.command!.arguments![0]);
         if (!project) {
             return;
         }
@@ -572,8 +573,8 @@ export async function activate(context: vscode.ExtensionContext) {
     }
 
     function toggleProjectEnabled(node: ProjectNode, askForUndo = true) {
-        const projectName: string = node.command.arguments[1];
-        const enabled: boolean = projectStorage.toggleEnabled(projectName);
+        const projectName: string = node.command!.arguments![1];
+        const enabled = projectStorage.toggleEnabled(projectName);
         
         if (enabled === undefined) {
             return;

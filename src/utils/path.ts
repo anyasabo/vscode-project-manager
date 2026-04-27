@@ -276,7 +276,7 @@ export function addParentFolderToDuplicates(projects: AutodetectedProjectList): 
     });
 
     // duplicates
-    const findDuplicates = arr => arr.filter((item, index) => arr.indexOf(item) !== index);
+    const findDuplicates = (arr: string[]) => arr.filter((item, index) => arr.indexOf(item) !== index);
     const dups = new Set(findDuplicates(names));
 
     for (const dup of dups) {

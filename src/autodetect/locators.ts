@@ -26,7 +26,7 @@ export class Locators implements Disposable {
     public svnLocator: CustomProjectLocator = new CustomProjectLocator("svn", "SVN", new SvnRepositoryDetector([ ".svn", "pristine" ]));
     public anyLocator: CustomProjectLocator = new CustomProjectLocator("any", "Any", new AnyRepositoryDetector([]));
 
-    private providerManager: Providers;
+    private providerManager!: Providers;
 
     public registerCommands() {
         commands.registerCommand("projectManager.refreshVSCodeProjects", () => this.refreshProjectsByType("VSCode", this.vscLocator, this.providerManager.vscodeProvider, true, true));
@@ -73,7 +73,7 @@ export class Locators implements Disposable {
         });
     }
 
-    public sortGroupedList(items): any[] {
+    public sortGroupedList(items: any[]): any[] {
         if (workspace.getConfiguration("projectManager").get("groupList", false)) {
             return this.sortProjectList(items);
         } else {
@@ -81,7 +81,7 @@ export class Locators implements Disposable {
         }
     }
 
-    public sortProjectList(items): any[] {
+    public sortProjectList(items: any[]): any[] {
         let itemsToShow = PathUtils.expandHomePaths(items);
         itemsToShow = this.removeRootPath(itemsToShow);
         const checkInvalidPath: boolean = workspace.getConfiguration("projectManager").get("checkInvalidPathsBeforeListing", true);
@@ -99,7 +99,7 @@ export class Locators implements Disposable {
             cancellable: false
         }, async (progress) => {
             progress.report({ increment: 50, message: projectType });
-            const result = await locator.refreshProjects(forceRefresh);
+            const result = await locator.refreshProjects(forceRefresh ?? false);
 
             if (result || forceRefresh) {
                 progress.report({ increment: 50, message: projectType });
@@ -115,27 +115,26 @@ export class Locators implements Disposable {
     }
 
     private removeRootPath(items: any[]): any[] {
-        // if (!vscode.workspace.rootPath) {
         const workspace0 = workspace.workspaceFile ? workspace.workspaceFile :
             workspace.workspaceFolders ? workspace.workspaceFolders[ 0 ].uri :
                 undefined;
 
         if (!workspace0 || !workspace.getConfiguration("projectManager").get("removeCurrentProjectFromList")) {
             return items;
-        } else {
-            if (isRemoteUri(workspace0)) {
-                return items.filter(value => {
-                    if (!isRemotePath(value.description)) { return value; }
-
-                    const uriElement = Uri.parse(value.description);
-                    if (uriElement.path !== workspace0.path) {
-                        return value;
-                    }
-                });
-            } else {
-                return items.filter(value => value.description.toString().toLowerCase() !== workspace.rootPath.toLowerCase());
-            }
         }
+
+        if (isRemoteUri(workspace0)) {
+            return items.filter(value => {
+                if (!isRemotePath(value.description)) { return value; }
+
+                const uriElement = Uri.parse(value.description);
+                if (uriElement.path !== workspace0.path) {
+                    return value;
+                }
+            });
+        }
+
+        return items.filter(value => value.description.toString().toLowerCase() !== workspace0.fsPath.toLowerCase());
     }
 
     // Filters out any newDirectories entries that are present in knownDirectories.

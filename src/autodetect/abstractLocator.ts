@@ -54,11 +54,11 @@ export class CustomProjectLocator {
         return depth;
     }
 
-    private isMaxDepthReached(currentDepth, initialDepth) {
+    private isMaxDepthReached(currentDepth: number, initialDepth: number) {
         return (this.maxDepth > 0) && ((currentDepth - initialDepth) > this.maxDepth);
     }
 
-    private isFolderIgnored(folder) {
+    private isFolderIgnored(folder: string) {
         const matches = this.ignoredFolders.filter(f => minimatch(folder, f));
         return matches.length > 0;
     }
@@ -137,7 +137,7 @@ export class CustomProjectLocator {
                 return;
             }
 
-            const promises = [];
+            const promises: Promise<void>[] = [];
             this.clearProjectList();
 
             projectsDirList.forEach((projectBasePath) => {
@@ -152,14 +152,14 @@ export class CustomProjectLocator {
                 const promise = new Promise<void>((resolve, reject) => {
                     try {
                         walker(expandedBasePath)
-                            .filterDir((dir) => {
+                            .filterDir((dir: string) => {
                                 return !(this.isFolderIgnored(path.basename(dir)) ||
                                     this.isMaxDepthReached(this.getPathDepth(dir), depth) || 
                                     this.isProjectWithinProjectIgnored(dir));
                             })
                             .on("dir", this.processDirectory)
                             .on("file", this.processFile)
-                            .on("symlink", (link) => {
+                            .on("symlink", (link: string) => {
                                 if (!workspace.getConfiguration("projectManager").get<boolean>("supportSymlinksOnBaseFolders", false)) {
                                     return;
                                 }
@@ -219,7 +219,7 @@ export class CustomProjectLocator {
         }
     };
 
-    private handleError(err) {
+    private handleError(err: unknown) {
         console.log("Error walker:", err);
     }
 
@@ -248,11 +248,11 @@ export class CustomProjectLocator {
         });
     }
 
-    public existsWithRootPath(rootPath: string): Project {
+    public existsWithRootPath(rootPath: string): Project | undefined {
         
         // it only works if using `cache`
         if (!this.alreadyLocated) {
-            return null;
+            return undefined;
         }
 
         for (const element of this.projectList) {
@@ -276,41 +276,40 @@ export class CustomProjectLocator {
     private refreshConfig(): boolean {
         const config = vscode.workspace.getConfiguration("projectManager");
         let refreshedSomething = false;
-        let currentValue = null;
 
-        currentValue = config.get<string[]>(this.kind + ".baseFolders");
-        if (!this.arraysAreEquals(this.baseFolders, currentValue)) {
-            this.baseFolders = currentValue;
+        const baseFolders = config.get<string[]>(this.kind + ".baseFolders") ?? [];
+        if (!this.arraysAreEquals(this.baseFolders, baseFolders)) {
+            this.baseFolders = baseFolders;
             refreshedSomething = true;
         }
 
-        currentValue = config.get<string[]>(this.kind + ".ignoredFolders", []);
-        if (!this.arraysAreEquals(this.ignoredFolders, currentValue)) {
-            this.ignoredFolders = currentValue;
-            refreshedSomething = true;
-        }        
-
-        currentValue = config.get(this.kind + ".excludeBaseFoldersFromResults", false);
-        if (this.excludeBaseFoldersFromResults !== currentValue) {
-            this.excludeBaseFoldersFromResults = currentValue;
+        const ignoredFolders = config.get<string[]>(this.kind + ".ignoredFolders") ?? [];
+        if (!this.arraysAreEquals(this.ignoredFolders, ignoredFolders)) {
+            this.ignoredFolders = ignoredFolders;
             refreshedSomething = true;
         }
 
-        currentValue = config.get(this.kind + ".maxDepthRecursion", -1);
-        if (this.maxDepth !== currentValue) {
-            this.maxDepth = currentValue;
+        const excludeBaseFoldersFromResults = config.get(this.kind + ".excludeBaseFoldersFromResults", false);
+        if (this.excludeBaseFoldersFromResults !== excludeBaseFoldersFromResults) {
+            this.excludeBaseFoldersFromResults = excludeBaseFoldersFromResults;
             refreshedSomething = true;
         }
 
-        currentValue = config.get("cacheProjectsBetweenSessions", true);
-        if (this.useCachedProjects !== currentValue) {
-            this.useCachedProjects = currentValue;
+        const maxDepth = config.get(this.kind + ".maxDepthRecursion", -1);
+        if (this.maxDepth !== maxDepth) {
+            this.maxDepth = maxDepth;
             refreshedSomething = true;
         }
 
-        currentValue = config.get("ignoreProjectsWithinProjects", false);
-        if (this.ignoreProjectsWithinProjects !== currentValue) {
-            this.ignoreProjectsWithinProjects = currentValue;
+        const useCachedProjects = config.get("cacheProjectsBetweenSessions", true);
+        if (this.useCachedProjects !== useCachedProjects) {
+            this.useCachedProjects = useCachedProjects;
+            refreshedSomething = true;
+        }
+
+        const ignoreProjectsWithinProjects = config.get("ignoreProjectsWithinProjects", false);
+        if (this.ignoreProjectsWithinProjects !== ignoreProjectsWithinProjects) {
+            this.ignoreProjectsWithinProjects = ignoreProjectsWithinProjects;
             refreshedSomething = true;
         }
 
@@ -326,7 +325,7 @@ export class CustomProjectLocator {
         return this.baseFolders.some(base => base.toLowerCase() === normalized);
     }
 
-    private arraysAreEquals(array1, array2): boolean {
+    private arraysAreEquals(array1: string[], array2: string[]): boolean {
         if (!array1 || !array2) {
             return false;
         }
@@ -336,14 +335,8 @@ export class CustomProjectLocator {
         }
 
         for (let i = 0, l = array1.length; i < l; i++) {
-            if (array1[i] instanceof Array && array2[i] instanceof Array) {
-                if (!array1[i].equals(array2[i])) {
-                    return false;
-                }
-            } else {
-                if (array1[i] !== array2[i]) {
-                    return false;
-                }
+            if (array1[i] !== array2[i]) {
+                return false;
             }
         }
         return true;

@@ -50,30 +50,38 @@ function folderNotFound(name: string, projectStorage: ProjectStorage) {
     });
 }
 
-function canPickSelectedProject(item: QuickPickItem, projectStorage: ProjectStorage): boolean {
+function canPickSelectedProject(item: QuickPickItem, projectStorage: ProjectStorage | undefined): boolean {
 
-    if (isRemotePath(item.description)) {
+    if (isRemotePath(item.description ?? "")) {
         return true;
     }
 
-    if (fs.existsSync(item.description.toString())) {
+    if (item.description && fs.existsSync(item.description.toString())) {
         return true;
     }
 
-    if (item.label.substr(0, 2) === "$(") {
+    if (item.label.substring(0, 2) === "$(") {
         window.showErrorMessage(l10n.t("Path does not exist or is unavailable."));
         return false;
     }
 
-    folderNotFound(item.label, projectStorage);
+    if (projectStorage) {
+        folderNotFound(item.label, projectStorage);
+    }
+    return false;
 }
 
-function getProjectsFromLocator(folders: any, locators: Locators, locatorToFilter: CustomProjectLocator, locatorToGetFrom: CustomProjectLocator) {
+function getProjectsFromLocator(
+    folders: any,
+    locators: Locators | undefined,
+    locatorToFilter: CustomProjectLocator | undefined,
+    locatorToGetFrom: CustomProjectLocator | undefined
+) {
     if (locatorToFilter && locatorToFilter !== locatorToGetFrom) {
         return folders;
     }
 
-    if (!locators) {
+    if (!locators || !locatorToGetFrom) {
         return folders;
     }
 
@@ -91,8 +99,8 @@ export interface Picked<T> {
     button: QuickInputButton | undefined
 }
 
-export async function pickProjects(projectStorage: ProjectStorage, locators: Locators, showOpenInNewWindowButton: boolean,
-    locatorToFilter: CustomProjectLocator): Promise<Picked<Project> | undefined> {
+export async function pickProjects(projectStorage: ProjectStorage | undefined, locators: Locators | undefined, showOpenInNewWindowButton: boolean,
+    locatorToFilter: CustomProjectLocator | undefined): Promise<Picked<Project> | undefined> {
     const disposables: Disposable[] = [];
 
     try {
@@ -160,7 +168,7 @@ export async function pickProjects(projectStorage: ProjectStorage, locators: Loc
                                 resolve(<Picked<Project>>{
                                     item: {
                                         name: item.label,
-                                        rootPath: PathUtils.normalizePath(item.description),
+                                        rootPath: PathUtils.normalizePath(item.description ?? ""),
                                         profile: item.profile,
                                     }, button: undefined
                                 });
@@ -179,7 +187,7 @@ export async function pickProjects(projectStorage: ProjectStorage, locators: Loc
                                 resolve(<Picked<Project>>{
                                     item: {
                                         name: item.item.label,
-                                        rootPath: PathUtils.normalizePath(item.item.description)
+                                        rootPath: PathUtils.normalizePath(item.item.description ?? "")
                                     }, button: item.button
                                 });
                                 input.hide();
@@ -213,22 +221,14 @@ export function shouldOpenInNewWindow(openInNewWindow: boolean, calledFrom: Comm
         return openInNewWindow;
     }
 
-    // Check for setting name before and after typo was corrected
     const oldValue = workspace.getConfiguration("projectManager").inspect("openInCurrenWindowIfEmpty");
     const newValue = workspace.getConfiguration("projectManager").inspect("openInCurrentWindowIfEmpty");
 
     let config: string | unknown;
-    if (oldValue.globalValue) {
-        config = newValue.globalValue === undefined ? oldValue.globalValue : newValue.globalValue;
+    if (oldValue?.globalValue) {
+        config = newValue?.globalValue === undefined ? oldValue.globalValue : newValue.globalValue;
     } else {
         config = workspace.getConfiguration("projectManager").get<string>("openInCurrentWindowIfEmpty");
-    }
-
-    if (config === OpenInCurrentWindowIfEmptyMode.always) {
-        return false;
-    }
-    if (config === OpenInCurrentWindowIfEmptyMode.never) {
-        return openInNewWindow;
     }
 
     switch (config) {
@@ -240,6 +240,8 @@ export function shouldOpenInNewWindow(openInNewWindow: boolean, calledFrom: Comm
             return calledFrom !== CommandLocation.CommandPalette;
         case OpenInCurrentWindowIfEmptyMode.onlyUsingSideBar:
             return calledFrom !== CommandLocation.SideBar;
+        default:
+            return openInNewWindow;
     }
 }
 
@@ -259,6 +261,8 @@ function shouldConfirmSwitchOnActiveWindow(calledFrom: CommandLocation): boolean
             return calledFrom === CommandLocation.SideBar;
         case ConfirmSwitchOnActiveWindowMode.always:
             return true;
+        default:
+            return false;
     }
 }
 
@@ -275,7 +279,7 @@ export async function canSwitchOnActiveWindow(calledFrom: CommandLocation): Prom
     return answer === optionOpenProject;
 }
 
-export async function openPickedProject(picked: Picked<Project>, forceNewWindow: boolean, calledFrom: CommandLocation) {
+export async function openPickedProject(picked: Picked<Project> | undefined, forceNewWindow: boolean, calledFrom: CommandLocation) {
     if (!picked) { return; }
 
     if (!picked.button) {
