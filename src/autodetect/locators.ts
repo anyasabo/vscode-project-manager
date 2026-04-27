@@ -115,7 +115,6 @@ export class Locators implements Disposable {
     }
 
     private removeRootPath(items: any[]): any[] {
-        // if (!vscode.workspace.rootPath) {
         const workspace0 = workspace.workspaceFile ? workspace.workspaceFile :
             workspace.workspaceFolders ? workspace.workspaceFolders[ 0 ].uri :
                 undefined;
@@ -133,7 +132,7 @@ export class Locators implements Disposable {
                     }
                 });
             } else {
-                return items.filter(value => value.description.toString().toLowerCase() !== workspace.rootPath.toLowerCase());
+                return items.filter(value => value.description.toString().toLowerCase() !== workspace0.fsPath.toLowerCase());
             }
         }
     }
