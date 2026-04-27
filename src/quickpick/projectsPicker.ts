@@ -156,7 +156,7 @@ export async function pickProjects(projectStorage: ProjectStorage | undefined, l
                         input.matchOnDescription = workspace.getConfiguration("projectManager").get("filterOnFullPath", false);
                         input.matchOnDetail = false;
                         input.items = <any[]>folders;
-                        input.onDidChangeSelection(items => {
+                        disposables.push(input.onDidChangeSelection(items => {
                             const item = <any>items[ 0 ];
                             if (item) {
                                 if (!canPickSelectedProject(item, projectStorage)) {
@@ -175,8 +175,8 @@ export async function pickProjects(projectStorage: ProjectStorage | undefined, l
                                 input.hide();
                                 return;
                             }
-                        }),
-                        input.onDidTriggerItemButton(item => {
+                        }));
+                        disposables.push(input.onDidTriggerItemButton(item => {
                             if (item) {
                                 if (!canPickSelectedProject(item.item, projectStorage)) {
                                     resolve(undefined);
@@ -193,13 +193,13 @@ export async function pickProjects(projectStorage: ProjectStorage | undefined, l
                                 input.hide();
                                 return;
                             }
-                        }),
-                        input.onDidHide(() => {
+                        }));
+                        disposables.push(input.onDidHide(() => {
                             commands.executeCommand("setContext", "inProjectManagerList", false);
                             resolve(undefined);
                             input.dispose();
                             return;
-                        });
+                        }));
                         input.show();
 
                     }
