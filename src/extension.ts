@@ -49,7 +49,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // load the projects
     locators = new Locators();
-    const projectStorage: ProjectStorage = new ProjectStorage(getProjectFilePath());
+    const projectsFilePath = getProjectFilePath();
+    const projectStorage: ProjectStorage = new ProjectStorage(projectsFilePath);
 
     const providerManager: Providers = new Providers(locators, projectStorage);
     locators.setProviderManager(providerManager);
@@ -81,7 +82,11 @@ export async function activate(context: vscode.ExtensionContext) {
     const hideGitWelcome = context.globalState.get<boolean>("hideGitWelcome", false);
     vscode.commands.executeCommand("setContext", "projectManager.hiddenGitWelcome", hideGitWelcome);
 
-    vscode.commands.registerCommand("_projectManager.open", async (projectPath: string, projectName: string, profile: string) => {
+    const registerCommand = (command: string, callback: (...args: any[]) => any) => {
+        context.subscriptions.push(vscode.commands.registerCommand(command, callback));
+    };
+
+    registerCommand("_projectManager.open", async (projectPath: string, projectName: string, profile: string) => {
         const uri = buildProjectUri(projectPath);
         if (!await canSwitchOnActiveWindow(CommandLocation.SideBar)) {
             return;
@@ -91,7 +96,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 () => ({}),  // done
                 () => vscode.window.showInformationMessage(l10n.t("Could not open the project!")));
     });
-    vscode.commands.registerCommand("_projectManager.openInNewWindow", (node) => {
+    registerCommand("_projectManager.openInNewWindow", (node) => {
         const uri = buildProjectUri(node.command.arguments[0]);
         const openInNewWindow = shouldOpenInNewWindow(true, CommandLocation.SideBar);
         vscode.commands.executeCommand("vscode.openFolder", uri, { forceProfile: node.command.arguments[2] , forceNewWindow: openInNewWindow } )
@@ -101,35 +106,35 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 
     // register commands (here, because it needs to be used right below if an invalid JSON is present)
-    vscode.commands.registerCommand("projectManager.saveProject", () => saveProject());
-    vscode.commands.registerCommand("projectManager.refreshProjects", () => refreshProjects(true, true));
+    registerCommand("projectManager.saveProject", () => saveProject());
+    registerCommand("projectManager.refreshProjects", () => refreshProjects(true, true));
     locators.registerCommands();
-    vscode.commands.registerCommand("projectManager.editProjects", () => editProjects());
-    vscode.commands.registerCommand("projectManager.listProjects", () => listProjects(false));
-    vscode.commands.registerCommand("projectManager.listProjectsNewWindow", () => listProjects(true));
+    registerCommand("projectManager.editProjects", () => editProjects());
+    registerCommand("projectManager.listProjects", () => listProjects(false));
+    registerCommand("projectManager.listProjectsNewWindow", () => listProjects(true));
     
-    vscode.commands.registerCommand("projectManager.listFavoriteProjects#sideBarFavorites", () => listStorageProjects());
-    vscode.commands.registerCommand("projectManager.listGitProjects#sideBarGit", () => listAutoDetectedProjects(locators.gitLocator));
-    vscode.commands.registerCommand("projectManager.listVSCodeProjects#sideBarVSCode", () => listAutoDetectedProjects(locators.vscLocator));
-    vscode.commands.registerCommand("projectManager.listSVNProjects#sideBarSVN", () => listAutoDetectedProjects(locators.svnLocator));
-    vscode.commands.registerCommand("projectManager.listMercurialProjects#sideBarMercurial", () => listAutoDetectedProjects(locators.mercurialLocator));
-    vscode.commands.registerCommand("projectManager.listAnyProjects#sideBarAny", () => listAutoDetectedProjects(locators.anyLocator));
+    registerCommand("projectManager.listFavoriteProjects#sideBarFavorites", () => listStorageProjects());
+    registerCommand("projectManager.listGitProjects#sideBarGit", () => listAutoDetectedProjects(locators.gitLocator));
+    registerCommand("projectManager.listVSCodeProjects#sideBarVSCode", () => listAutoDetectedProjects(locators.vscLocator));
+    registerCommand("projectManager.listSVNProjects#sideBarSVN", () => listAutoDetectedProjects(locators.svnLocator));
+    registerCommand("projectManager.listMercurialProjects#sideBarMercurial", () => listAutoDetectedProjects(locators.mercurialLocator));
+    registerCommand("projectManager.listAnyProjects#sideBarAny", () => listAutoDetectedProjects(locators.anyLocator));
 
     // new commands (ActivityBar)
-    vscode.commands.registerCommand("projectManager.addToWorkspace#sideBar", (node) => addProjectToWorkspace(node));
-    vscode.commands.registerCommand("projectManager.addToWorkspace", () => addProjectToWorkspace(undefined));
-    vscode.commands.registerCommand("_projectManager.deleteProject", (node) => deleteProject(node));
-    vscode.commands.registerCommand("_projectManager.renameProject", (node) => renameProject(node));
-    vscode.commands.registerCommand("_projectManager.editTags", (node) => editTags(node));
-    vscode.commands.registerCommand("projectManager.addToFavorites", (node: ProjectNode | undefined) => saveProject(node));
-    vscode.commands.registerCommand("_projectManager.toggleProjectEnabled", (node) => toggleProjectEnabled(node));
+    registerCommand("projectManager.addToWorkspace#sideBar", (node) => addProjectToWorkspace(node));
+    registerCommand("projectManager.addToWorkspace", () => addProjectToWorkspace(undefined));
+    registerCommand("_projectManager.deleteProject", (node) => deleteProject(node));
+    registerCommand("_projectManager.renameProject", (node) => renameProject(node));
+    registerCommand("_projectManager.editTags", (node) => editTags(node));
+    registerCommand("projectManager.addToFavorites", (node: ProjectNode | undefined) => saveProject(node));
+    registerCommand("_projectManager.toggleProjectEnabled", (node) => toggleProjectEnabled(node));
 
     const viewAsList = Container.context.globalState.get<boolean>("viewAsList", true);
     vscode.commands.executeCommand("setContext", "projectManager.viewAsList", viewAsList);
-    vscode.commands.registerCommand("_projectManager.viewAsTags#sideBarFavorites", () => toggleViewAsFavoriteProjects(ViewFavoritesAs.VIEW_AS_TAGS));
-    vscode.commands.registerCommand("_projectManager.viewAsList#sideBarFavorites", () => toggleViewAsFavoriteProjects(ViewFavoritesAs.VIEW_AS_LIST));
-    vscode.commands.registerCommand("projectManager.filterProjectsByTag", () => filterProjectsByTag());
-    vscode.commands.registerCommand("projectManager.filterProjectsByTag#sideBar", () => filterProjectsByTag());
+    registerCommand("_projectManager.viewAsTags#sideBarFavorites", () => toggleViewAsFavoriteProjects(ViewFavoritesAs.VIEW_AS_TAGS));
+    registerCommand("_projectManager.viewAsList#sideBarFavorites", () => toggleViewAsFavoriteProjects(ViewFavoritesAs.VIEW_AS_LIST));
+    registerCommand("projectManager.filterProjectsByTag", () => filterProjectsByTag());
+    registerCommand("projectManager.filterProjectsByTag#sideBar", () => filterProjectsByTag());
 
     function toggleViewAsFavoriteProjects(view: ViewFavoritesAs) {
         if (view === ViewFavoritesAs.VIEW_AS_LIST) {
@@ -171,11 +176,12 @@ export async function activate(context: vscode.ExtensionContext) {
     // // new place to register TreeView
     await providerManager.showTreeViewFromAllProviders();
 
-    fs.watchFile(getProjectFilePath(), () => {
+    fs.watchFile(projectsFilePath, () => {
         loadProjectsFile();
         providerManager.storageProvider.refresh();
         providerManager.updateTreeViewStorage();
     });
+    context.subscriptions.push(new vscode.Disposable(() => fs.unwatchFile(projectsFilePath)));
 
     context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(async cfg => {
         if (cfg.affectsConfiguration("projectManager.git") || cfg.affectsConfiguration("projectManager.hg") ||
