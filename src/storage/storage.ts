@@ -25,7 +25,7 @@ export class ProjectStorage {
         return;
     }
 
-    public pop(name: string): Project {
+    public pop(name: string): Project | undefined {
         for (let index = 0; index < this.projects.length; index++) {
             const element: Project = this.projects[ index ];
             if (element.name.toLowerCase() === name.toLowerCase()) {
@@ -84,7 +84,8 @@ export class ProjectStorage {
         return found;
     }
 
-    public existsWithRootPath(rootPath: string, returnExpandedHomePath: boolean = false): Project {
+    public existsWithRootPath(rootPath: string | undefined, returnExpandedHomePath: boolean = false): Project | undefined {
+        if (!rootPath) { return undefined; }
         for (const element of this.projects) {
             const elementPath = PathUtils.expandHomePath(element.rootPath);
             if ((elementPath.toLocaleLowerCase() === rootPath.toLocaleLowerCase()) || (elementPath === rootPath)) {
@@ -99,7 +100,7 @@ export class ProjectStorage {
         }
     }
 
-    public existsRemoteWithRootPath(uri: Uri): Project {
+    public existsRemoteWithRootPath(uri: Uri): Project | undefined {
         for (const element of this.projects) {
             if (!isRemotePath(element.rootPath)) { continue; }
 
@@ -156,7 +157,7 @@ export class ProjectStorage {
             return "";
         } catch (error) {
             console.log(error);
-            return error.toString();
+            return String(error);
         }
     }
 

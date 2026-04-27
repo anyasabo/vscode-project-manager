@@ -29,11 +29,11 @@ export class Container {
         return this._stack;
     }
 
-    private static _currentProject: Project;
-    public static get currentProject(): Project {
+    private static _currentProject: Project | undefined;
+    public static get currentProject(): Project | undefined {
         return this._currentProject;
     }
-    public static set currentProject(value: Project) {
+    public static set currentProject(value: Project | undefined) {
         this._currentProject = value;
     }
 }

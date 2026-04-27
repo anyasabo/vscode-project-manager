@@ -12,13 +12,13 @@ export interface ProjectDetails {
     name: string;
 }
 
-export async function getProjectDetails(): Promise<ProjectDetails> {
+export async function getProjectDetails(): Promise<ProjectDetails | undefined> {
 
     // workspaceFile - .code-workspace
     if (workspace.workspaceFile) {
         if (workspace.workspaceFile.scheme === "untitled") {
             window.showInformationMessage(l10n.t("Save the workspace first to save a project"));
-            return null;
+            return undefined;
         }
 
         if (workspace.workspaceFile.scheme === "file") {
@@ -38,7 +38,7 @@ export async function getProjectDetails(): Promise<ProjectDetails> {
 
     if (!workspace.workspaceFolders) {
         window.showInformationMessage(l10n.t("Open a folder first to save a project"));
-        return null;
+        return undefined;
     }
 
     if (workspace.workspaceFolders[ 0 ].uri.scheme === "file") {
@@ -72,4 +72,6 @@ export async function getProjectDetails(): Promise<ProjectDetails> {
             name: path.basename(workspace.workspaceFolders[ 0 ].uri.fsPath)
         };
     }
+
+    return undefined;
 }

@@ -144,7 +144,7 @@ suite("ProjectStorage", () => {
 
         result = storage.getProjectsByTags([ "frontend", "backend" ]);
         assert.strictEqual(result.length, 2);
-        const labels = result.map(r => r.label).sort();
+        const labels = result.map((r: any) => r.label).sort();
         assert.deepStrictEqual(labels, [ "Backend", "Frontend" ]);
 
         result = storage.getProjectsByTags([ NO_TAGS_DEFINED ]);
