@@ -16,15 +16,6 @@ import { isRemotePath } from "../utils/remote";
 import { buildProjectUri } from "../utils/uri";
 import { CommandLocation, ConfirmSwitchOnActiveWindowMode, OpenInCurrentWindowIfEmptyMode } from "../core/constants";
 
-function getProjects(itemsSorted: any[]): Promise<any[]> {
-
-    return new Promise((resolve) => {
-
-        resolve(itemsSorted);
-
-    });
-}
-
 function folderNotFound(name: string, projectStorage: ProjectStorage) {
 
     const optionUpdateProject = <MessageItem>{
@@ -114,7 +105,7 @@ export async function pickProjects(projectStorage: ProjectStorage | undefined, l
                 }
             }
 
-            getProjects(items)
+            Promise.resolve(items)
                 .then((folders) => {
                     return getProjectsFromLocator(folders, locators, locatorToFilter, locators?.vscLocator);
                 })

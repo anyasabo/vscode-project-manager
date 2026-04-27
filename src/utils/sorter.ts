@@ -8,13 +8,20 @@ import { Container } from "../core/container";
 import { Stack } from "./stack";
 
 function sortByName(items: any[]): any[] {
+    const labelWithoutOcticon = new Map<any, string>();
+    for (const item of items) {
+        labelWithoutOcticon.set(item, item.label.replace(/\$\(\w*(-)*\w*\)\s/, "").toLowerCase());
+    }
+
     const itemsSorted = items.sort((n1, n2) => {
-        // ignore octicons
-        if (n1.label.replace(/\$\(\w*(-)*\w*\)\s/, "").toLowerCase() > n2.label.replace(/\$\(\w*(-)*\w*\)\s/, "").toLowerCase()) {
+        const n1Label = labelWithoutOcticon.get(n1) ?? "";
+        const n2Label = labelWithoutOcticon.get(n2) ?? "";
+
+        if (n1Label > n2Label) {
             return 1;
         }
 
-        if (n1.label.replace(/\$\(\w*(-)*\w*\)\s/, "").toLowerCase() < n2.label.replace(/\$\(\w*(-)*\w*\)\s/, "").toLowerCase()) {
+        if (n1Label < n2Label) {
             return -1;
         }
 

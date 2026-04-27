@@ -68,11 +68,7 @@ export class CustomProjectLocator {
             return false; 
         }
 
-        let found = false;
-        this.projectList.forEach(dir => {
-            found = found || folder.startsWith(dir.fullPath);
-        });
-        return found;
+        return this.projectList.some(dir => folder.startsWith(dir.fullPath));
     }
 
     public isAlreadyLocated(): boolean {
