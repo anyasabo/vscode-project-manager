@@ -1108,7 +1108,8 @@
 				"error",
 				"always"
 			],
-			"no-unexpected-multiline": "error"
+			"no-unexpected-multiline": "error",
+			"no-l10n-literal-comparison": "warn"
 		}
 	},
 	"scripts": {
@@ -1118,7 +1119,8 @@
 		"webpack": "webpack --mode development",
 		"webpack-dev": "webpack --mode development --watch",
 		"compile": "tsc -p ./",
-		"lint": "eslint -c package.json --ext .ts src vscode-whats-new",
+		"lint": "eslint --rulesdir .eslint-plugin-local -c package.json --ext .ts src vscode-whats-new",
+		"l10n:export": "npx @vscode/l10n-dev export --outDir ./l10n ./src",
 		"pretest": "npm run compile && npm run lint",
 		"test-compile": "tsc -p ./ && npm run webpack",
 		"just-test": "node ./out/src/test/runTest.js",
@@ -1130,6 +1132,7 @@
 		"@types/vscode": "^1.78.0",
 		"@typescript-eslint/eslint-plugin": "^6.21.0",
 		"@typescript-eslint/parser": "^6.21.0",
+		"@vscode/l10n-dev": "^0.0.35",
 		"@vscode/test-electron": "^2.5.2",
 		"eslint": "^8.1.0",
 		"eslint-config-vscode-ext": "^1.1.0",
