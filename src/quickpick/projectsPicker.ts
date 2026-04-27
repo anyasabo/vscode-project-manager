@@ -40,7 +40,7 @@ function folderNotFound(name: string, projectStorage: ProjectStorage) {
             return;
         }
 
-        if (option.title === l10n.t("Update Project")) {
+        if (option === optionUpdateProject) {
             commands.executeCommand("projectManager.editProjects");
         } else { // Update Project
             projectStorage.pop(name);

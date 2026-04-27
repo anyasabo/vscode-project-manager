@@ -262,7 +262,7 @@ export async function activate(context: vscode.ExtensionContext) {
             });
         } else {
             const optionEditProject = <vscode.MessageItem> {
-                title: "Yes, edit manually"
+                title: l10n.t("Yes, edit manually")
             };
             vscode.window.showErrorMessage(l10n.t("No projects saved yet! You should open a folder and use Save Project instead. Do you really want to edit manually? "), optionEditProject).then(option => {
                 // nothing selected
@@ -270,7 +270,7 @@ export async function activate(context: vscode.ExtensionContext) {
                     return;
                 }
 
-                if (option.title === l10n.t("Yes, edit manually")) {
+                if (option === optionEditProject) {
                     projectStorage.push("Project Name", "Root Path");
                     projectStorage.save();
                     providerManager.updateTreeViewStorage();
