@@ -8,8 +8,14 @@ export class Stack {
     private items: string[] = [];
 
     public fromString(input: string) {
-        if (input !== "") {
+        if (input === "") {
+            return;
+        }
+
+        try {
             this.items = JSON.parse(input);
+        } catch {
+            this.items = [];
         }
     }
 
